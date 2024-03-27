@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const initialState = {
-    loading: false,
+    loading: true,
     products: [],
     newselectedProducts:[],
     productList:[],
@@ -37,7 +37,7 @@ export const dashboardSlice = createSlice({
     },
     reducers:{
         checkProduct:(state , action)=> {     
-            state.newselectedProducts.push(Number(action.payload))       
+            state.newselectedProducts =  action.payload    
                        
         }, 
         uncheckProduct:(state , action)=> {     

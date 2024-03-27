@@ -16,22 +16,18 @@ import {
   } from '@shopify/polaris';
   // import {IndexFiltersProps, TabProps} from '@shopify/polaris';
   import {useState, useCallback, useEffect, useMemo} from 'react';
+  import {Paginate} from "../component/Paginate";
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
-  
-  export function Drop() {
-    const dispatch = useDispatch()
-
-    
-    const [currentPage, setCurrentPage] = useState(1);
-    const product = useSelector(state=> state.dashbordSlice)
-    const productList = useSelector(state=> state.dashbordSlice.productList)
-    const loading = useSelector(state => state.dashbordSlice.loading);
-    const newProducts = useSelector(state=> state.dashbordSlice.newselectedProducts)
+import { fetchUsers } from '~/Slice/dashborad/dashbordSlice';
+  export function Drop({productList , loading, setSubmitButton , SubmitButton , newProducts , setNewProducts}) {  
+    const dispatch = useDispatch()   
+    const selctedProducts = useSelector(state=> state.dashbordSlice.products)
+    // const productList = useSelector(state=> state.dashbordSlice.productList)
+    // let newProducts = useSelector(state=> state.dashbordSlice.newselectedProducts) 
+    // const loading = useSelector(state => state.dashbordSlice.loading);  
+    const [currentPage, setCurrentPage] = useState(1);  
     const [query, setQuery] = useState('');
-    const [filteredSegments, setFilteredSegments] = useState([]);
-    const sleep = (ms) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
+    const [filteredSegments, setFilteredSegments] = useState([]);   
     const [itemStrings, setItemStrings] = useState([
       'All',
       'Active',
@@ -41,31 +37,17 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
     const [selected, setSelected] = useState(0);  
     const [sortBy, setSortBy] = useState('');
 
-
-    useEffect(()=>{
-      dispatch(fetchUsers())
-      .then((response) => {
-        setFilteredSegments(productList);
-    })
-    .catch((error) => {
-        console.error('Error fetching data:', error);
-        
-    });
-      
-    }, [])
-
+    
+    useEffect(() => {      
+      setFilteredSegments(productList); 
+     }, [productList]);
 
     const handleTabChange = useCallback((selectedTabIndex) => {
-      // Here you can define your sorting logic based on the selected tab index
-      // For simplicity, let's say sorting is based on the index itself
       setSortBy(itemStrings[selectedTabIndex]);
       setSelected(selectedTabIndex);
     }, [itemStrings]);
 
-
     const sortedOrders = useMemo(() => {
-      // Sorting logic here
-      // For example, if you want to sort orders based on date
       if (sortBy === 'All') {        
         setFilteredSegments(productList);
       } else {
@@ -86,8 +68,6 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
       actions:[],
     }));
     
-    
-    // const [queryValue, setQueryValue] = useState('');
     function handleFilterProducts(query){
       setFilteredSegments(productList);
       console.log(query , "filtered");
@@ -97,34 +77,32 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
           .includes(query.toLocaleLowerCase().trim());
       }); 
      setFilteredSegments(nextFilteredProducts);
-    };
-
-    
+    };   
 
     function handleQueryChange(query){
-
-      console.log(query);
-      setQuery(query);
-  
-      if (query.length >= 2) handleFilterProducts(query);
+      setQuery(query);  
+      if (query.length >= 2) {
+        handleFilterProducts(query);
+      }
+      else{
+        setSelected(0);
+        setFilteredSegments(productList)
+      }        
     };
 
     function handleQueryClear(){
       handleQueryChange('');
     };  
     
-
-
-    function handleSelectionChange(e) {
-      const productId = e.target.value;
-      const isChecked = e.target.checked;
-      if (isChecked) {
-        dispatch(checkProduct(productId));
-      } else {
-        dispatch(uncheckProduct(productId));
-      }
-    }
-
+    // function handleSelectionChange(e) {
+    //   const productId = e.target.value;
+    //   const isChecked = e.target.checked;
+    //   if (isChecked) {
+    //     dispatch(checkProduct(productId));
+    //   } else {
+    //     dispatch(uncheckProduct(productId));
+    //   }
+    // }
       
     const {mode, setMode} = useSetIndexFiltersMode();
     const onHandleCancel = () => {
@@ -132,22 +110,14 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
 
     };
   
-  
     const resourceName = {
-      singular: 'order',
-      plural: 'orders',
-    };
-  
-    // const {selectedResources, allResourcesSelected, handleSelectionChange} =
-    //   useIndexResourceState(orders);
+      singular: 'Product',
+      plural: 'Products',
+    }; 
 
+    
 
-    const itemsPerPage = 10; // Number of items per page      
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const paginatedList = query || selected ? filteredSegments.slice(start, end) :  productList.slice(start, end) ;
-
-    const productsData = query || selected ? filteredSegments : productList;
+  const productsData = Paginate(10, filteredSegments , currentPage);
     const emptyStateMarkup = (
     
       loading? (
@@ -159,8 +129,16 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
         withIllustration
       />
     );
+
+    const {selectedResources, allResourcesSelected, handleSelectionChange} =
+    useIndexResourceState(filteredSegments); 
   
-    const rowMarkup = paginatedList.map(
+
+    useEffect(()=>{
+      
+      setNewProducts(selectedResources);
+    }, [selectedResources])
+    const rowMarkup = productsData.map(
       (
         item,
         index,
@@ -168,9 +146,9 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
         <IndexTable.Row
           id={item.id}
           key={item.id}
-          selected={product.products.includes(item.id) || newProducts.includes(item.id)}
+          selected={selectedResources.includes(item.id)}
           position={index}
-          disabled={product.products.includes(item.id)}
+          disabled={selctedProducts.includes(item.id)}
         >
         
           <IndexTable.Cell>
@@ -201,6 +179,7 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
           onQueryChange={handleQueryChange}
           onQueryClear={handleQueryClear}          
           cancelAction={{
+            type: 'save-as',
             onAction: onHandleCancel,
             disabled: false,
             loading: false,
@@ -224,10 +203,10 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
           <IndexTable
           emptyState={emptyStateMarkup}
           resourceName={resourceName}
-          itemCount={productsData.length}
-        //   selectedItemsCount={
-        //     productList.length ? 'All' : product.products.length
-        //   }
+          itemCount={filteredSegments.length}
+          selectedItemsCount={
+            allResourcesSelected ? 'All' : selectedResources.length
+          }
           onSelectionChange={handleSelectionChange}
           headings={[
           {title: 'productname'},
@@ -237,7 +216,7 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
           {title: 'Status'},
           ]}
           pagination={{
-            hasNext: productsData.length > end,
+            hasNext: filteredSegments.length > (currentPage - 1) * 10 + 10,
             hasPrevious: currentPage !== 1 ,
             onNext: () => {
                 setCurrentPage(prev=> prev + 1)

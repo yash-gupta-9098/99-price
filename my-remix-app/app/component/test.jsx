@@ -17,10 +17,7 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
 
   
   export function Test() {
-    const dispatch = useDispatch()
-    useEffect(()=>{
-      dispatch(fetchUsers())
-    }, [])
+    const dispatch = useDispatch()    
     const [currentPage, setCurrentPage] = useState(1);
     const product = useSelector(state=> state.dashbordSlice)
     const productList = useSelector(state=> state.dashbordSlice.productList)
@@ -28,12 +25,21 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
     const newProducts = useSelector(state=> state.dashbordSlice.newselectedProducts)   
 // search
     const [query, setQuery] = useState('');
-    const [filteredSegments, setFilteredSegments] = useState([]);
+    const [filteredSegments, setFilteredSegments] = useState(productList);
+    useEffect(()=>{
+      dispatch(fetchUsers())
+    }, [])
+
+    useEffect(() => {
+      setFilteredSegments(productList); // Initialize filteredSegments with productList
+    }, [productList]);
+
+
 
 
     function handleFilterProducts(query){
         console.log(query , "filtered");
-        const nextFilteredProducts = productList.filter((productList) => {
+        const nextFilteredProducts = filteredSegments.filter((productList) => {
           return productList.title
             .toLocaleLowerCase()
             .includes(query.toLocaleLowerCase().trim());
@@ -45,7 +51,11 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
         console.log(query);
         setQuery(query);
     
-        if (query.length >= 2) handleFilterProducts(query);
+        if (query.length >= 2){
+          handleFilterProducts(query);
+        } else {
+          setFilteredSegments(productList); // Reset filteredSegments to original productList when query is cleared
+        }
       };
 
       function handleQueryClear(){
@@ -69,16 +79,15 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
       }
 
       
-
     //   const {selectedResources, allResourcesSelected , } =
     //   useIndexResourceState(productList);
     
       const itemsPerPage = 10; // Number of items per page      
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
-      const paginatedList = productList.slice(start, end);
+      const paginatedList = filteredSegments.slice(start, end);
 
-      const productsData = query ? filteredSegments : paginatedList;
+      const productsData = paginatedList;
 
     const rowMarkup = productsData.map(
       (
@@ -134,7 +143,7 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
         
         <IndexTable
           resourceName={resourceName}
-          itemCount={productList.length}
+          itemCount={filteredSegments.length}
         //   selectedItemsCount={
         //     productList.length ? 'All' : product.products.length
         //   }
@@ -147,7 +156,7 @@ import { fetchUsers } from '../Slice/dashborad/dashbordSlice';
           {title: 'Status'},
           ]}
           pagination={{
-            hasNext: productList.length > end,
+            hasNext: filteredSegments.length > end,
             hasPrevious: currentPage !== 1 ,
             onNext: () => {
                 setCurrentPage(prev=> prev + 1)

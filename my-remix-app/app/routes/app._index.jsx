@@ -1,44 +1,35 @@
 
+import axios from "axios";
 import { useDispatch , useSelector  } from 'react-redux';
-import { postData } from '~/Slice/dashborad/dashbordSlice';
-import  {Button} from '../component/Button'
-import {ResourceList} from "../component/ResourceList"
-import { Form, useLoaderData , useNavigate } from "@remix-run/react";
-import { useState } from "react";
+import { fetchUsers, postData } from '~/Slice/dashborad/dashbordSlice';
+import { Form, useNavigate } from "@remix-run/react";
+import { useEffect, useState } from "react";
 import { Page } from '@shopify/polaris';
 import {showToastMessage} from '../component/Toast';
-import {Table} from "../component/Table"
-
-import axios from "axios";
-export const loader = async () => {
-  // Concatenating the URL parts
-
-  try {
-    const response = await fetch('https://dynamicpricing.expertvillagemedia.com/public/api/getproduct'); 
-    if (!response.ok) {
-      throw new Error('Failed to fetch data');
-    }
-    const data = await response.json();
-    return { data };
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    throw new Error('Failed to load data');
-  }
-};
-
+import { Drop } from '~/component/drop';
 export default function Index() {
+  const dispatch = useDispatch()   
   const Navigate  = useNavigate()
-  const dispatch = useDispatch()
-  const thead= [ "Select" , "productname" , "Product Code" , 	"Barcode" , "Product Cost" , "Status" ];
-  const data = useLoaderData();  
-  const newProducts = useSelector(state=> state.dashbordSlice.newselectedProducts) 
-  const productList = useSelector(state=> state.dashbordSlice.productList) 
-  const [tbody , setTbody] = useState(data.data.data.products)
-  const [buttonState , setButtonState] = useState(false)
-  // console.log(productList , "valueindex")
-  const submitdata = (e) => { 
-    
-    e.preventDefault();
+  const selctedProducts = useSelector(state=> state.dashbordSlice.products)
+  const productList = useSelector(state=> state.dashbordSlice.productList)
+  const loading = useSelector(state => state.dashbordSlice.loading);  
+  // const newProducts = useSelector(state=> state.dashbordSlice.newselectedProducts) 
+  
+  useEffect(()=>{
+    dispatch(fetchUsers())
+  }, [])
+  
+  const [SubmitButton , setSubmitButton] = useState(true)
+  const [newProducts , setNewProducts] = useState([])
+  useEffect(()=>{
+    console.log(newProducts , "index");
+    if(newProducts.length > 0){
+      setSubmitButton(false)
+    }else{
+      setSubmitButton(true)
+    }
+  }, [newProducts])
+  const submitdata = () => { 
     if(newProducts.length !== 0){
       axios.post('https://dynamicpricing.expertvillagemedia.com/public/api/addproduct', {
       product_id:newProducts
@@ -48,14 +39,14 @@ export default function Index() {
         console.log(response);      
         dispatch(postData());
         showToastMessage("Product is added" , 2000);    
-        Navigate("/allproducts")  
+        Navigate("products")  
 
       }, (error) => {
         console.log(error);
       });
       }
       else{
-        setButtonState(prev => !prev);
+        
         showToastMessage("Please select one product" , 2000);
       }
   };
@@ -63,10 +54,9 @@ export default function Index() {
 
   return (
     <div className='dp-dashbord-page page-wrapper'>  
-      <Page title="DashBoard" primaryAction={{content: 'Submit',  disabled: {buttonState} , onAction: (e) => submitdata(e)}}>
-        <Form >                   
-        <ResourceList thead={thead} tbody={tbody}/>
-       
+      <Page title="DashBoard" primaryAction={{content: 'Submit', disabled: SubmitButton,  onAction: () => submitdata()}}>
+        <Form >
+          <Drop newProducts={newProducts} setNewProducts={setNewProducts}  productList={productList} loading={loading}/>       
         </Form>
       </Page>      
     </div>

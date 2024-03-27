@@ -5,9 +5,7 @@ export default function (){
    
     return (
         <>
-        <h1>all products </h1>
-        {/* <Table /> */}
-        <Test />
+        <h1>all products </h1>        
         <Drop />
         </>
         )
